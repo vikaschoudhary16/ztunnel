@@ -241,6 +241,8 @@ impl ClientCertProvider for FileClientCertProviderImpl {
                 conn.set_alpn_protos(Alpn::H2.encode())?;
                 conn.set_min_proto_version(Some(ssl::SslVersion::TLS1_2))?;
                 conn.set_max_proto_version(Some(ssl::SslVersion::TLS1_3))?;
+                conn.set_cipher_list("AES128-GCM-SHA256,AES256-GCM-SHA384,AES128-SHA,AES256-SHA")
+                    .unwrap();
                 match root_cert {
                     RootCert::File(f) => {
                         conn.set_ca_file(f).map_err(Error::InvalidRootCert)?;
@@ -257,6 +259,9 @@ impl ClientCertProvider for FileClientCertProviderImpl {
             FileClientCertProviderImpl::ClientBundle(bundle) => {
                 let mut conn: ssl::SslConnectorBuilder =
                     ssl::SslConnector::builder(ssl::SslMethod::tls_client())?;
+                conn.set_cipher_list("AES128-GCM-SHA256,AES256-GCM-SHA384,AES128-SHA,AES256-SHA")
+                    .unwrap();
+
                 match bundle.setup_ctx(&mut conn) {
                     Ok(_) => {
                         return Ok(conn);
@@ -278,6 +283,9 @@ pub fn grpc_tls_connector(uri: String, root_cert: RootCert) -> Result<TlsGrpcCha
     conn.set_alpn_protos(Alpn::H2.encode())?;
     conn.set_min_proto_version(Some(ssl::SslVersion::TLS1_2))?;
     conn.set_max_proto_version(Some(ssl::SslVersion::TLS1_3))?;
+    conn.set_cipher_list("AES128-GCM-SHA256,AES256-GCM-SHA384,AES128-SHA,AES256-SHA")
+        .unwrap();
+
     match root_cert {
         RootCert::File(f) => {
             conn.set_ca_file(f).map_err(Error::InvalidRootCert)?;
@@ -402,6 +410,8 @@ impl Certs {
         // mozilla_intermediate_v5 is the only variant that enables TLSv1.3, so we use that.
         let mut conn = ssl::SslAcceptor::mozilla_intermediate_v5(ssl::SslMethod::tls_server())?;
         self.setup_ctx(&mut conn)?;
+        conn.set_cipher_list("AES128-GCM-SHA256,AES256-GCM-SHA384,AES128-SHA,AES256-SHA")
+            .unwrap();
 
         if let Some(dest_id) = dest_id {
             // Validate that the source cert shares the same trust domain
@@ -418,6 +428,9 @@ impl Certs {
         let _ctx = ssl::SslContext::builder(ssl::SslMethod::tls_server())?;
         // mozilla_intermediate_v5 is the only variant that enables TLSv1.3, so we use that.
         let mut conn = ssl::SslAcceptor::mozilla_intermediate_v5(ssl::SslMethod::tls_server())?;
+        conn.set_cipher_list("AES128-GCM-SHA256,AES256-GCM-SHA384,AES128-SHA,AES256-SHA")
+            .unwrap();
+
         self.setup_ctx(&mut conn)?;
 
         conn.set_verify_callback(ssl::SslVerifyMode::NONE, Verifier::None.callback());
@@ -426,6 +439,9 @@ impl Certs {
 
     pub fn connector(&self, dest_id: Vec<Identity>) -> Result<ssl::SslConnector, Error> {
         let mut conn = ssl::SslConnector::builder(ssl::SslMethod::tls_client())?;
+        conn.set_cipher_list("AES128-GCM-SHA256,AES256-GCM-SHA384,AES128-SHA,AES256-SHA")
+            .unwrap();
+
         self.setup_ctx(&mut conn)?;
 
         // client verifies SAN
@@ -437,8 +453,8 @@ impl Certs {
     fn setup_ctx(&self, conn: &mut SslContextBuilder) -> Result<(), Error> {
         // general TLS options
         conn.set_alpn_protos(Alpn::H2.encode())?;
-        conn.set_min_proto_version(Some(ssl::SslVersion::TLS1_3))?;
-        conn.set_max_proto_version(Some(ssl::SslVersion::TLS1_3))?;
+        conn.set_min_proto_version(Some(ssl::SslVersion::TLS1_2))?;
+        conn.set_max_proto_version(Some(ssl::SslVersion::TLS1_2))?;
 
         // key and certs
         conn.set_private_key(&self.key)?;
@@ -663,8 +679,9 @@ where
 
 const TEST_CERT: &[u8] = include_bytes!("cert-chain.pem");
 #[cfg(test)]
-const TEST_WORKLOAD_CERT: &[u8] = include_bytes!("cert.pem");
+const TEST_WORKLOAD_CERT: &[u8] = include_bytes!("vikas-server-cert.pem");
 const TEST_PKEY: &[u8] = include_bytes!("key.pem");
+//const TEST_PKEY: &[u8] = include_bytes!("vikaskey.pem");
 const TEST_ROOT: &[u8] = include_bytes!("root-cert.pem");
 const TEST_ROOT_KEY: &[u8] = include_bytes!("ca-key.pem");
 
