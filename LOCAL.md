@@ -112,7 +112,7 @@ metadata:
   name: fake-tunnel-worker1
   namespace: istio-system
 spec:
-  nodeName: ambient-worker
+  nodeName: kind-worker
   terminationGracePeriodSeconds: 1
   serviceAccountName: ztunnel
   containers:
